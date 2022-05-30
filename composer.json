@@ -20,5 +20,5 @@
             "DakinQuelia\\FormBuilder\\": "src"
         }
     },
-    "minimum-stability": "stable"
+    "minimum-stability": "dev"
 }

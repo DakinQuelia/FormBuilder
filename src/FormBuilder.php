@@ -57,15 +57,18 @@ class FormBuilder implements FormBuilderInterface
             $attributes['method'] = 'GET';
         }
 
-        $this->form = '<form action="' . $attributes['method'] . '"' . (array_key_exists('multipart', $attributes) ? $attributes['multipart'] : '') . '>';
+        $enctype = (array_key_exists('enctype', $attributes) ? ' enctype="' . $attributes['enctype'] . '"' : '');
+        $class = array_key_exists('class', $attributes) ? ' class="' . $attributes['class'] . '"' : '';
+
+        $this->form = '<form action="' . $attributes['method'] . '"' . $enctype . $class . '>';
         $this->form .= '<fieldset>';
         $this->form .= array_key_exists('legend', $attributes) ? "<legend>" . $attributes['legend'] . "</legend>" : "";
 
         foreach($this->GetFields() as $field)
         {
-            $attributes = $field['attributes'];
-            $class = array_key_exists('class', $attributes) ? ' class="' . $attributes['class'] . '"' : '';
-            $options = array_key_exists('options', $attributes) ? $attributes['options'] : null;
+            $attr = $field['attributes'];
+            $options = array_key_exists('options', $attr) ? $attr['options'] : null;
+            $class = array_key_exists('class', $attr) ? ' class="' . $attr['class'] . '"' : '';
             
             if ($field['type'] === 'select' && is_array($options))
             {
