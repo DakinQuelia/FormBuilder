@@ -1,0 +1,24 @@
+{
+    "name": "dakinquelia/formbuilder",
+    "type": "library",
+    "description": "Système de création de formulaires.",
+    "homepage": "http://www.danielchalseche.fr.cr/",
+    "keywords": ["form", "forms", "formbuilder", "form-maker", "maker"],
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Dakin Quelia",
+            "email": "dakinquelia@gmail.com",
+            "role": "Lead Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.0||^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "DakinQuelia\\FormBuilder\\": "src"
+        }
+    },
+    "minimum-stability": "stable"
+}
