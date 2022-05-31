@@ -1,12 +1,12 @@
 <?php
 /*======================================================================*\
-||  Corona CMS						                                    ||
+||  FormBuilder					                                        ||
 ||  Fichier     :                                                       ||
 ||        DakinQuelia\FormBuilder\Interfaces\FormBuilderInterface.php   ||
-||  Version     : 1.0.0.                                	            ||
+||  Version     : 1.1.0                                	                ||
 ||  Auteur(s)   : Dakin Quelia						                    ||
 ||  ------------------------------------------------------------------  ||
-||  Copyright ©2022 Corona CMS - codé par Dakin Quelia                  ||
+||  Copyright ©2022 FormBuilder - codé par Dakin Quelia                 ||
 \*======================================================================*/
 namespace DakinQuelia\FormBuilder\Interfaces;
 
@@ -18,9 +18,16 @@ interface FormBuilderInterface
     *	@param string $title 		Titre du formulaire
     *   @param array $attributes    Attributs du formulaire 
     *
-    *   @return void
+    *   @return FormBuilder
     **/
-    public function Render(string $title, array $attributes = []): self;
+    public function GetForm(): string;
+
+    /**
+    *   Cette méthode permet de générer les boutons du formulaire.
+    *
+    *   @return FormBuilder
+    **/
+    public function RenderButtons(): self;
 
 	/**
 	*	Cette méthode permet de construire le formulaire.
@@ -39,14 +46,21 @@ interface FormBuilderInterface
     *   @param string $type         Type du champ
     *	@param array $rules 		Règles de validation
     *
-    *   @return FormBuilderInterface
+    *   @return FormBuilder
 	**/
 	public function AddField(string $name, string $type, array $rules): self;
 
     /**
+    *   Cette méthode permet d'ajouter des boutons au formulaire.
+    *
+    *   @return FormBuilder
+    **/
+    public function AddButton(string $name, string $type = 'button', array $options = []): self;
+
+    /**
     *   Cette méthode permet de filtrer les champs.
     *
-    *   @return FormBuilderInterface
+    *   @return FormBuilder
     **/
     public function FilterFields(): self;
     
@@ -74,6 +88,13 @@ interface FormBuilderInterface
     *   @return bool
     **/
     public function Has(string $name): bool;
+
+    /**
+    *   Cette méthode récupère toutes les règles du champ. 
+    *
+    *   @return array
+    **/
+    public function GetRulesField(): array;
 
     /**
     *   Cette méthode récupère tous les champs. 

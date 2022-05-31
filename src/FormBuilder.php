@@ -1,11 +1,11 @@
 <?php
 /*======================================================================*\
-||  Corona CMS						                                    ||
+||  FormBuilder						                                    ||
 ||  Fichier     : DakinQuelia\FormBuilder\FormBuilder.php               ||
-||  Version     : 1.0.0.                                	            ||
+||  Version     : 1.1.0                                	                ||
 ||  Auteur(s)   : Dakin Quelia						                    ||
 ||  ------------------------------------------------------------------  ||
-||  Copyright ©2022 Corona CMS - codé par Dakin Quelia                  ||
+||  Copyright ©2022 FormBuilder - codé par Dakin Quelia                 ||
 \*======================================================================*/
 namespace DakinQuelia\FormBuilder;
 
@@ -13,18 +13,22 @@ use Exception;
 use InvalidArgumentException;
 use DakinQuelia\FormBuilder\Interfaces\FormBuilderInterface;
 
-class FormBuilder implements FormBuilderInterface
+abstract class FormBuilder implements FormBuilderInterface
 {
-    protected $form;                                       // Formulaire
+    protected string $form = '';                           // Formulaire
     protected array $fields = [];                         // Tableau des champs du formulaire
-    protected array $attr_default = [];                  // Attributs par défaut du formulaire
+    protected array $buttons = [];                       // Boutons du formulaire
+    protected string $title = '';                       // Titre du formulaire
+    protected array $attributes = [];                  // Attributs par défaut du formulaire
 
 	/**
 	*   Ceci initialise la classe.
 	**/
-	public function __construct()
+	public function __construct(string $title, array $attributes = [])
 	{
 		//
+        $this->title = $title;
+        $this->attributes = $attributes;
 	}
 
     /**
@@ -33,12 +37,36 @@ class FormBuilder implements FormBuilderInterface
     *	@param string $title 		Titre du formulaire
     *   @param array $attributes    Attributs du formulaire 
     *
-    *   @return FormBuilder
+    *   @return string
     **/
-    public function Render(string $title, array $attributes = []): self
+    public function GetForm(): string
     {
         $this->FilterFields();
-        $this->BuildForm($title, $attributes);
+        $this->BuildForm($this->title, $this->attributes);
+
+        return $this->form;
+    }
+
+    /**
+    *   Cette méthode permet de générer les boutons du formulaire.
+    *
+    *   @return FormBuilder
+    **/
+    public function RenderButtons(): FormBuilder
+    {
+        if (!is_array($this->buttons))
+        {
+            throw new Exception("La liste des boutons doit être un tableau.");
+        }
+
+        foreach ($this->buttons as $button)
+        {
+            $attr = $button['options'];
+            $label = array_key_exists('label', $attr) ? $attr['label'] : $button['name'];
+            $class = array_key_exists('class', $attr) ? ' class="' . $attr['class'] . '"' : '';
+
+            $this->form .= '<button type="' . $button['type'] . '"' . $class . '>' . $label .  '</button>';
+        }
 
         return $this;
     }
@@ -50,7 +78,7 @@ class FormBuilder implements FormBuilderInterface
     * 
     *   @return FormBuilder
 	**/
-	public function BuildForm(string $title, array $attributes = []): self
+	public function BuildForm(string $title, array $attributes = []): FormBuilder
 	{
         if (!$attributes['method'])
         {
@@ -59,40 +87,84 @@ class FormBuilder implements FormBuilderInterface
 
         $enctype = (array_key_exists('enctype', $attributes) ? ' enctype="' . $attributes['enctype'] . '"' : '');
         $class = array_key_exists('class', $attributes) ? ' class="' . $attributes['class'] . '"' : '';
+        $action = array_key_exists('action', $attributes) ? $attributes['action'] : '';
+        $div = array_key_exists('rowclass', $attributes) ? ' class="' . $attributes['rowclass'] . '"' : '';
 
-        $this->form = '<form action="' . $attributes['method'] . '"' . $enctype . $class . '>';
-        $this->form .= '<fieldset>';
-        $this->form .= array_key_exists('legend', $attributes) ? "<legend>" . $attributes['legend'] . "</legend>" : "";
+        $this->form = '<form method="' . $attributes['method'] . '" action="' . $action . '" ' . $enctype . $class . '>' . "\n\t";
+        $this->form .= '<fieldset>' . "\n\t";
+        $this->form .= array_key_exists('legend', $attributes) ? "<legend>" . $attributes['legend'] . "</legend>" . "\n\t" : "";
 
         foreach($this->GetFields() as $field)
         {
             $attr = $field['attributes'];
-            $options = array_key_exists('options', $attr) ? $attr['options'] : null;
+            $options = array_key_exists('options', $attr) ? $attr['options'] : [];
+            $value = array_key_exists('value', $attr) ? 'value="' . $attr['value'] . '"' : '';
             $class = array_key_exists('class', $attr) ? ' class="' . $attr['class'] . '"' : '';
-            
-            if ($field['type'] === 'select' && is_array($options))
-            {
-                $this->form .= '<select' . $class . '>';
+            $placeholder = array_key_exists('placeholder', $attr) ? ' placeholder="' . $attr['placeholder'] . '"' : '';
+            $textarea_content = array_key_exists('content', $attr) ? $attr['content'] : '';
 
-                foreach($options as $option)
-                {
-                    $this->form .= '<option value="' . $option['value'] . '">' . $option['label'] . '</option>';
-                }
-                
-                $this->form .= '</select>';
-            }
-            else if ($field['type'] === 'textarea')
+            if ($attr['label'] === null || $attr['label'] === "")
             {
-                $this->form .= '<textarea name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $class . '></textarea>';
+                throw new Exception("Le label du champ doit être indiqué.");
             }
-            else
+
+            $label = '<label for="' . $field['name'] . '">' . $attr['label'] . '</label>';
+
+            switch($field['type'])
             {
-                $this->form .= '<input type="' . $field['type'] . '" name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $class . '/>';
+                case 'select':
+                    $this->form .= '<div' . $div . '>';
+                    $this->form .= $label;
+                    $this->form .= '<select' . $class . ' name="' . $field['name'] . '" id="' . $field['name'] . '">' . "\n\t";
+    
+                    foreach($options as $option)
+                    {
+                        $this->form .= '<option value="' . $option['value'] . '">' . $option['label'] . '</option>' . "\n\t";
+                    }
+                    
+                    $this->form .= '</select>' . "\n\t";
+                    $this->form .= '</div>';
+                break;
+
+                case 'textarea':
+                    $this->form .= '<div' . $div . '>';
+                    $this->form .= $label;
+                    $this->form .= '<textarea name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $class . '>' . $textarea_content . '</textarea>' . "\n\t";
+                    $this->form .= '</div>';
+                break;
+
+                case 'radio':
+                    $this->form .= '<div' . $div . '>';
+                    $this->form .= '<input type="radio" name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $class . '/>' . $label . "\n\t";
+                    $this->form .= '</div>';
+                break;
+
+                case 'checkbox':
+                    $this->form .= '<div' . $div . '>';
+                    $this->form .= '<input type="checkbox" name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $class . '/>' . $label . "\n\t";
+                    $this->form .= '</div>';
+                break;
+
+                case 'hidden':
+                    $this->form .= '<input type="hidden" name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $value . '/>' . "\n\t";;
+                break;
+
+                default:
+                    $this->form .= '<div' . $div . '>';
+                    $this->form .= $label;
+                    $this->form .= '<input type="' . $field['type'] . '" name="' . $field['name'] .'" id="' . $field['name'] .'" ' . $class . $placeholder . $value . '/>' . "\n\t";
+                    $this->form .= '</div>';
+                break;
             }
         }
 
+        $this->form .= '</fieldset>' . "\n\t";
+
+        $this->form .= '<fieldset>';
+        $this->RenderButtons();
         $this->form .= '</fieldset>';
-        $this->form .= '</form>';
+
+        $this->form .= '</form>' . "\n";
 
         return $this;
 	}
@@ -101,16 +173,17 @@ class FormBuilder implements FormBuilderInterface
 	*	Cette méthode ajoute un champ au formulaire.
     *   
     *	@param string $name 		Nom du champ
-    *   @param string $type         Type du champ
+    *   @param string $type         Type du champ           (text, number, textarea, radio, checkbox)
+    *   @param array $attributes    Attributs du champ
     *	@param array $rules 		Règles de validation
     *
     *   @return FormBuilder
 	**/
-	public function AddField(string $name, string $type = 'text', array $attributes = [], array $rules = []): self
+	public function AddField(string $name, string $type = 'text', array $attributes = [], array $rules = []): FormBuilder
     {
         if (!$name || trim($name) === '')
         {
-            throw new InvalidArgumentException("Le nom du champ DOIT être indiqué.");
+            throw new InvalidArgumentException("Le nom du champ DOIT être indiqué et ne peut contenir aucun espace ou caractères spéciaux.");
         }
 
         if (!$type || trim($type) === '') 
@@ -129,11 +202,33 @@ class FormBuilder implements FormBuilderInterface
     }
 
     /**
+    *   Cette méthode permet d'ajouter des boutons au formulaire.
+    *
+    *   @return FormBuilder
+    **/
+    public function AddButton(string $name, string $type = 'button', array $options = []): FormBuilder
+    {
+        if (!$name || trim($name) === '')
+        {
+            throw new InvalidArgumentException("Le nom du bouton DOIT être indiqué et ne peut contenir aucun espace ou caractères spéciaux.");
+        }
+
+        // Traitement du bouton
+        $this->buttons[$name] = [
+            'name'          => $name,
+            'type'          => $type, 
+            'options'       => $options,
+        ];
+
+        return $this;
+    }
+
+    /**
     *   Cette méthode permet de filtrer les champs.
     *
     *   @return FormBuilder
     **/
-    public function FilterFields(): self
+    public function FilterFields(): FormBuilder
     {
         if (empty($this->fields))
         {
@@ -188,6 +283,16 @@ class FormBuilder implements FormBuilderInterface
     }
 
     /**
+    *   Cette méthode récupère toutes les règles du champ. 
+    *
+    *   @return array
+    **/
+    public function GetRulesField(): array
+    {
+        return [];
+    }
+
+    /**
     *   Cette méthode permet de récupérer le type de champ.
     *
     *   @param string $field         Nom du champ 
@@ -214,7 +319,7 @@ class FormBuilder implements FormBuilderInterface
     *
     *   @return FormBuilder
     **/
-    public function GetField(): self
+    public function GetField(): FormBuilder
     {   
         throw new Exception("Cette fonctionnalité n'est pas implémentée");
     }
